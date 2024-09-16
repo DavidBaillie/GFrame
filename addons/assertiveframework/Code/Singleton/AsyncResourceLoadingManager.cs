@@ -1,5 +1,7 @@
 using Godot;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 /// <summary>
 /// Manager is responsible for holding onto resource loading events and invoking callbacks when they complete
@@ -39,7 +41,6 @@ public partial class AsyncResourceLoadingManager : Node
         System.Collections.Generic.List<string> toRemove = new();
 
         // State per task
-        ResourceLoader.ThreadLoadStatus status;
         Godot.Collections.Array progress = new();
 
         // For all the tasks
@@ -47,30 +48,42 @@ public partial class AsyncResourceLoadingManager : Node
         {
             try
             {
-                // Get a status
-                status = ResourceLoader.LoadThreadedGetStatus(task.Value.Path, progress);
-
-                // Handle status state
-                switch (status)
+                var statuses = task.Value.Paths.Select(x =>
                 {
-                    case ResourceLoader.ThreadLoadStatus.Failed:
-                        task.Value.OnError?.Invoke(Error.Failed);
-                        toRemove.Add(task.Key);
-                        break;
+                    var status = ResourceLoader.LoadThreadedGetStatus(x, progress);
+                    return new LoadingStatus() 
+                    { 
+                        Path = x, 
+                        Status = status, 
+                        Percent = status == ResourceLoader.ThreadLoadStatus.InProgress ? progress[0].AsDouble() : 0 
+                    };
+                });
 
-                    case ResourceLoader.ThreadLoadStatus.Loaded:
-                        task.Value.OnComplete?.Invoke(ResourceLoader.LoadThreadedGet(task.Value.Path));
-                        toRemove.Add(task.Key);
-                        break;
 
-                    case ResourceLoader.ThreadLoadStatus.InProgress:
-                        task.Value.OnLoadingInProgress?.Invoke(progress.Count > 0 ? progress[0].AsDouble() : 0);
-                        break;
+                // Any loading?
+                if (statuses.Any(x => x.Status == ResourceLoader.ThreadLoadStatus.InProgress))
+                {
+                    task.Value.OnLoadingInProgress?.Invoke(statuses.Sum(x => x.Percent) / statuses.Count());
+                }
+                // All loaded, any failures?
+                else if (statuses.Any(x => x.Status == ResourceLoader.ThreadLoadStatus.Failed || x.Status == ResourceLoader.ThreadLoadStatus.InvalidResource))
+                {
+                    var loaded = statuses.Where(x => x.Status == ResourceLoader.ThreadLoadStatus.Loaded)
+                        .Select(x => ResourceLoader.LoadThreadedGet(x.Path))
+                        .ToList();
+                    var failed = statuses.Where(x => x.Status != ResourceLoader.ThreadLoadStatus.Loaded)
+                        .Select(x => x.Status)
+                        .ToList();
 
-                    case ResourceLoader.ThreadLoadStatus.InvalidResource:
-                        task.Value.OnError?.Invoke(Error.FileNotFound);
-                        toRemove.Add(task.Key);
-                        break;
+                    toRemove.Add(task.Key);
+
+                    task.Value.OnComplete?.Invoke(loaded, failed);
+                }
+                // All loaded and good
+                else
+                {
+                    toRemove.Add(task.Key);
+                    task.Value.OnComplete?.Invoke(statuses.Select(x => ResourceLoader.LoadThreadedGet(x.Path)).ToList(), new());
                 }
             }
             catch (Exception ex)
@@ -93,7 +106,8 @@ public partial class AsyncResourceLoadingManager : Node
     /// <param name="OnCompleteLoading">Invoked when loading is complete</param>
     /// <param name="OnLoadingInProgress">Invoked each frame the loading is progressing</param>
     /// <param name="OnError">Invoked if the load fails</param>
-    public static void AddResourceLoadEvent(string key, string path, Action<Resource> OnCompleteLoading, Action<double> OnLoadingInProgress = null, Action<Error> OnError = null)
+    public static void AddResourceLoadEvent(string key, string path, Action<List<Resource>, List<ResourceLoader.ThreadLoadStatus>> OnCompleteLoading, 
+        Action<double> OnLoadingInProgress = null, Action<Error> OnError = null)
     {
         // Clear last request
         if (Instance.loadingTasks.ContainsKey(key))
@@ -108,7 +122,42 @@ public partial class AsyncResourceLoadingManager : Node
 
         Instance.loadingTasks.Add(key, new()
         {
-            Path = path,
+            Paths = { path },
+            OnComplete = OnCompleteLoading,
+            OnLoadingInProgress = OnLoadingInProgress,
+            OnError = OnError
+        });
+    }
+
+    /// <summary>
+    /// Add a new resource load to the 
+    /// </summary>
+    /// <param name="key">Key to remember item by</param>
+    /// <param name="path">Path to resource</param>
+    /// <param name="OnCompleteLoading">Invoked when loading is complete</param>
+    /// <param name="OnLoadingInProgress">Invoked each frame the loading is progressing</param>
+    /// <param name="OnError">Invoked if the load fails</param>
+    public static void AddResourcesLoadEvent(string key, List<string> paths, Action<List<Resource>, List<ResourceLoader.ThreadLoadStatus>> OnCompleteLoading, 
+        Action<double> OnLoadingInProgress = null, Action<Error> OnError = null)
+    {
+        // Clear last request
+        if (Instance.loadingTasks.ContainsKey(key))
+            Instance.loadingTasks.Remove(key);
+
+        foreach (var path in paths)
+        {
+            var error = ResourceLoader.LoadThreadedRequest(path);
+            if (error != Error.Ok)
+            {
+                OnError.Invoke(error);
+                return;
+            }
+        }
+        
+
+        Instance.loadingTasks.Add(key, new()
+        {
+            Paths = paths,
             OnComplete = OnCompleteLoading,
             OnLoadingInProgress = OnLoadingInProgress,
             OnError = OnError
@@ -117,9 +166,16 @@ public partial class AsyncResourceLoadingManager : Node
 
     private struct LoadRequest
     {
-        public string Path { get; set; }
-        public Action<Resource> OnComplete { get; set; }
+        public List<string> Paths { get; set; }
+        public Action<List<Resource>, List<ResourceLoader.ThreadLoadStatus>> OnComplete { get; set; }
         public Action<double> OnLoadingInProgress { get; set; }
         public Action<Error> OnError { get; set; }
+    }
+
+    private struct LoadingStatus
+    {
+        public string Path { get; set; }
+        public ResourceLoader.ThreadLoadStatus Status { get; set; }
+        public double Percent { get; set; }
     }
 }

@@ -1,9 +1,8 @@
 using Godot;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
-[GlobalClass, Tool]
+[GlobalClass]
 public partial class LevelManager : Node
 {
     public static LevelManager Instance { get; private set; }
@@ -21,13 +20,19 @@ public partial class LevelManager : Node
     public LevelCollectionTag CurrentCollection { get; set; } = null;
     public Node CurrentBaseNode { get; set; } = null;
 
+    private Node loadingScreenNode = null;
+
 
     public override void _Ready()
     {
         if (Instance == null)
+        {
             Instance = this;
+        }
         else
+        {
             GD.PrintErr("Scene Manager already has a singleton, this should never happen!");
+        }
     }
 
     public override void _Process(double delta)
@@ -67,6 +72,13 @@ public partial class LevelManager : Node
     private void StartLoadingNewLevel(LevelCollectionTag collection, bool freeUntrackedScenes = true)
     {
         // Load loading screen
+        var loadingScreen = collection.LoadingScreenOverride ?? DefaultLoadingScreen;
+        AsyncResourceLoadingManager.AddResourceLoadEvent(nameof(LevelManager), loadingScreen.ResourcePath,
+            (assets, failures) => LoadNewNodes(collection, assets[0], freeUntrackedScenes),
+            (percentLoaded) => { /* Loading percentage */ },
+            (error) => GD.PrintErr($"Failed to load the loading screen [{loadingScreen?.ResourceName}]"));
+
+        var loadingScreenNode = ResourceLoader.Load<PackedScene>(loadingScreen.ResourcePath).Instantiate<Node>();
     }
 
     /// <summary>
@@ -74,71 +86,80 @@ public partial class LevelManager : Node
     /// </summary>
     /// <param name="collection"></param>
     /// <param name="freeUntrackedScenes"></param>
-    private void LoadNewNodes(LevelCollectionTag collection, bool freeUntrackedScenes = true)
+    private void LoadNewNodes(LevelCollectionTag collection, Resource loadingScreen, bool freeUntrackedScenes = true)
     {
         // Free nodes
         // Load new nodes
+
+        loadingScreenNode = (loadingScreen as PackedScene).Instantiate();
+        GetTree().Root.AddChild(loadingScreenNode);
+
+        //End previous game mode and decide what we're doing
+        CurrentCollection?.GameMode?.Cleanup(CurrentBaseNode);
+        var nodeActions = GenerateSceneActions(collection);
+
+        //Create new node to hold everything
+        var newNode = new Node();
+        newNode.Name = string.IsNullOrWhiteSpace(collection.EditorDisplayName) ? collection.ResourceName : collection.EditorDisplayName;
+        GetTree().Root.AddChild(newNode);
+
+        //Tranfer nodes we're keeping
+        foreach (var node in nodeActions.NodesToTransfer)
+        {
+            node.GetParent().RemoveChild(node);
+            newNode.AddChild(node);
+        }
+
+        //Kill the old node holding children
+        if (CurrentBaseNode is not null)
+            CurrentBaseNode.QueueFree();
+
+        //Kill untracked nodes
+        if (freeUntrackedScenes)
+        {
+            foreach (var node in nodeActions.UntrackedNodes)
+            {
+                node.QueueFree();
+            }
+        }
+
+        //Load the new nodes
+        CurrentBaseNode = newNode;
+
+        AsyncResourceLoadingManager.AddResourcesLoadEvent(nameof(LevelManager), nodeActions.ScenesToLoad.Select(x => x.ResourcePath).ToList(),
+            (assets, failures) => { InstanceNewNodes(collection, assets); },
+            (progress) => { /* Progress Bar */ },
+            (error) => { GD.PrintErr($"Failed to load any new scenes during transition!"); });
+
+        foreach (var scene in nodeActions.ScenesToLoad) // Need to be able to load many scenes
+        {
+            var path = scene.ResourcePath;
+            var loaded = GD.Load<PackedScene>(path);
+            var instance = loaded.Instantiate();
+
+            CurrentBaseNode.AddChild(instance);
+        }
+
+        //Start new mode and remove loading screen
+        CurrentCollection = collection;
+        collection.GameMode?.Setup(CurrentBaseNode);
+        loadingScreenNode.QueueFree();
     }
 
-    /// <summary>
-    /// New nodes are in, clean up the transition screen
-    /// </summary>
-    /// <param name="collection"></param>
-    /// <param name="freeUntrackedScenes"></param>
-    private void CleanupTransition(LevelCollectionTag collection, bool freeUntrackedScenes = true)
+    private void InstanceNewNodes(LevelCollectionTag collection, List<Resource> scenes)
     {
-        // Free loading screen
+        foreach(var resource in scenes)
+        {
+            if (resource is PackedScene scene)
+            {
+                CurrentBaseNode.AddChild(scene.Instantiate());
+            }
+        }
+
+        CurrentCollection = collection;
+        collection.GameMode?.Setup(CurrentBaseNode);
+        loadingScreenNode.QueueFree();
     }
-
-    //private void LoadLevelCollection_Deferred(LevelCollectionTag collection, bool freeUntrackedScenes = true)
-    //{
-    //    //Spin up the loading screen
-    //    var loadingScreen = collection.LoadingScreenOverride ?? DefaultLoadingScreen;
-    //    var loadingScreenNode = ResourceLoader.Load<PackedScene>(loadingScreen.ResourcePath).Instantiate<Node>();
-    //    GetTree().Root.AddChild(loadingScreenNode);
-
-    //    //End previous game mode and decide what we're doing
-    //    CurrentCollection?.GameMode?.Cleanup(CurrentBaseNode);
-    //    var nodeActions = GenerateSceneActions(collection);
-
-    //    //Create new node to hold everything
-    //    Node newNode = new Node();
-    //    newNode.Name = string.IsNullOrWhiteSpace(collection.EditorDisplayName) ? collection.ResourceName : collection.EditorDisplayName;
-    //    GetTree().Root.AddChild(newNode);
-
-    //    //Tranfer nodes we're keeping
-    //    foreach (var node in nodeActions.NodesToTransfer)
-    //    {
-    //        node.GetParent().RemoveChild(node);
-    //        newNode.AddChild(node);
-    //    }
-
-    //    //Kill the old node holding children
-    //    if (CurrentBaseNode is not null)
-    //        CurrentBaseNode.QueueFree();
-
-    //    //Kill untracked nodes
-    //    foreach (var node in nodeActions.UntrackedNodes)
-    //    {
-    //        node.QueueFree();
-    //    }
-
-    //    //Load the new nodes
-    //    CurrentBaseNode = newNode;
-    //    foreach (var scene in nodeActions.ScenesToLoad)
-    //    {
-    //        var path = scene.ResourcePath;
-    //        var loaded = GD.Load<PackedScene>(path);
-    //        var instance = loaded.Instantiate();
-
-    //        CurrentBaseNode.AddChild(instance);
-    //    }
-
-    //    //Start new mode and remove loading screen
-    //    CurrentCollection = collection;
-    //    collection.GameMode?.Setup(CurrentBaseNode);
-    //    loadingScreenNode.QueueFree();
-    //}
 
     /// <summary>
     /// Determines what load actions need to be taken to transition from one level to another

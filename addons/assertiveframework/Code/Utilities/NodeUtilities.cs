@@ -28,7 +28,7 @@ public static class NodeUtilities
         return false;
     }
 
-    public static T GetFirstChildOrThrow<T>(this Node node, Exception? exception = null) where T : Node
+    public static T GetFirstChildOrThrow<T>(this Node node, Exception exception = null) where T : Node
     {
         foreach (var child in node.GetChildren())
         {
