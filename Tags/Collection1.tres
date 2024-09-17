@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LevelCollectionTag" load_steps=2 format=3 uid="uid://cpduuo710j13i"]
+
+[ext_resource type="Script" path="res://addons/assertiveframework/Code/Tags/LevelCollectionTag.cs" id="1_pgclw"]
+
+[resource]
+script = ExtResource("1_pgclw")
+EditorDisplayName = "Alpha"
+ReloadAlreadyExistingNodes = false
+Scenes = []
+Id = "c390a6da-dd83-45ca-9b6f-a7558dc430cc"
+IsEnabled = true

@@ -8,9 +8,6 @@ public partial class LevelManager : Node
     public static LevelManager Instance { get; private set; }
 
     [Export]
-    public string SingletonPath { get; set; } = "/root/Scene_Manager";
-
-    [Export]
     public PackedScene DefaultLoadingScreen { get; set; }
 
     [Export]
@@ -35,19 +32,15 @@ public partial class LevelManager : Node
         }
     }
 
-    public override void _Process(double delta)
-    {
-        base._Process(delta);
-
-
-    }
-
     /// <summary>
     /// Loads the provided game mode and scenes for the mode
     /// </summary>
     /// <param name="collection">Level collection to load</param>
     /// <param name="freeUntrackedScenes">If unknown nodes should be removed</param>
-    public void LoadSceneCollection(LevelCollectionTag collection, bool freeUntrackedScenes = true)
+    public static void LoadSceneCollection(LevelCollectionTag collection, bool freeUntrackedScenes = true)
+        => Instance.DeferLoadingStart(collection, freeUntrackedScenes);
+
+    private void DeferLoadingStart(LevelCollectionTag collection, bool freeUntrackedScenes = true)
     {
         if (collection == null)
         {
@@ -88,22 +81,25 @@ public partial class LevelManager : Node
     /// <param name="freeUntrackedScenes"></param>
     private void LoadNewNodes(LevelCollectionTag collection, Resource loadingScreen, bool freeUntrackedScenes = true)
     {
-        // Free nodes
-        // Load new nodes
-
         loadingScreenNode = (loadingScreen as PackedScene).Instantiate();
         GetTree().Root.AddChild(loadingScreenNode);
-
-        //End previous game mode and decide what we're doing
-        CurrentCollection?.GameMode?.Cleanup(CurrentBaseNode);
-        var nodeActions = GenerateSceneActions(collection);
 
         //Create new node to hold everything
         var newNode = new Node();
         newNode.Name = string.IsNullOrWhiteSpace(collection.EditorDisplayName) ? collection.ResourceName : collection.EditorDisplayName;
         GetTree().Root.AddChild(newNode);
 
-        //Tranfer nodes we're keeping
+        // Same gamemode, different collection
+        if (CurrentCollection?.GameMode is not null && CurrentCollection.GameMode == collection.GameMode)
+            CurrentCollection.GameMode.ChangeCollection(CurrentBaseNode, newNode);
+        // Different gamemode, different collection
+        else
+            CurrentCollection?.GameMode?.Cleanup(CurrentBaseNode);
+        
+        // Determine what changes are needed
+        var nodeActions = GenerateSceneActions(collection);
+        
+        // Move over the nodes we're keeping
         foreach (var node in nodeActions.NodesToTransfer)
         {
             node.GetParent().RemoveChild(node);
@@ -130,25 +126,11 @@ public partial class LevelManager : Node
             (assets, failures) => { InstanceNewNodes(collection, assets); },
             (progress) => { /* Progress Bar */ },
             (error) => { GD.PrintErr($"Failed to load any new scenes during transition!"); });
-
-        foreach (var scene in nodeActions.ScenesToLoad) // Need to be able to load many scenes
-        {
-            var path = scene.ResourcePath;
-            var loaded = GD.Load<PackedScene>(path);
-            var instance = loaded.Instantiate();
-
-            CurrentBaseNode.AddChild(instance);
-        }
-
-        //Start new mode and remove loading screen
-        CurrentCollection = collection;
-        collection.GameMode?.Setup(CurrentBaseNode);
-        loadingScreenNode.QueueFree();
     }
 
     private void InstanceNewNodes(LevelCollectionTag collection, List<Resource> scenes)
     {
-        foreach(var resource in scenes)
+        foreach (var resource in scenes)
         {
             if (resource is PackedScene scene)
             {

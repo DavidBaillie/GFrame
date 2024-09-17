@@ -9,7 +9,10 @@ using System.Linq;
 [GlobalClass]
 public partial class AsyncResourceLoadingManager : Node
 {
-    public static AsyncResourceLoadingManager Instance { get; private set; }
+    public static AsyncResourceLoadingManager Instance
+    {
+        get; set;
+    }
 
     private System.Collections.Generic.Dictionary<string, LoadRequest> loadingTasks = new();
 
@@ -51,11 +54,11 @@ public partial class AsyncResourceLoadingManager : Node
                 var statuses = task.Value.Paths.Select(x =>
                 {
                     var status = ResourceLoader.LoadThreadedGetStatus(x, progress);
-                    return new LoadingStatus() 
-                    { 
-                        Path = x, 
-                        Status = status, 
-                        Percent = status == ResourceLoader.ThreadLoadStatus.InProgress ? progress[0].AsDouble() : 0 
+                    return new LoadingStatus()
+                    {
+                        Path = x,
+                        Status = status,
+                        Percent = status == ResourceLoader.ThreadLoadStatus.InProgress ? progress[0].AsDouble() : 0
                     };
                 });
 
@@ -106,7 +109,7 @@ public partial class AsyncResourceLoadingManager : Node
     /// <param name="OnCompleteLoading">Invoked when loading is complete</param>
     /// <param name="OnLoadingInProgress">Invoked each frame the loading is progressing</param>
     /// <param name="OnError">Invoked if the load fails</param>
-    public static void AddResourceLoadEvent(string key, string path, Action<List<Resource>, List<ResourceLoader.ThreadLoadStatus>> OnCompleteLoading, 
+    public static void AddResourceLoadEvent(string key, string path, Action<List<Resource>, List<ResourceLoader.ThreadLoadStatus>> OnCompleteLoading,
         Action<double> OnLoadingInProgress = null, Action<Error> OnError = null)
     {
         // Clear last request
@@ -114,19 +117,21 @@ public partial class AsyncResourceLoadingManager : Node
             Instance.loadingTasks.Remove(key);
 
         var error = ResourceLoader.LoadThreadedRequest(path);
-        if(error != Error.Ok)
+        if (error != Error.Ok)
         {
             OnError?.Invoke(error);
             return;
         }
 
-        Instance.loadingTasks.Add(key, new()
+        var request = new LoadRequest()
         {
-            Paths = { path },
+            Paths = new List<string> { path },
             OnComplete = OnCompleteLoading,
             OnLoadingInProgress = OnLoadingInProgress,
             OnError = OnError
-        });
+        };
+
+        Instance.loadingTasks.Add(key, request);
     }
 
     /// <summary>
@@ -137,7 +142,7 @@ public partial class AsyncResourceLoadingManager : Node
     /// <param name="OnCompleteLoading">Invoked when loading is complete</param>
     /// <param name="OnLoadingInProgress">Invoked each frame the loading is progressing</param>
     /// <param name="OnError">Invoked if the load fails</param>
-    public static void AddResourcesLoadEvent(string key, List<string> paths, Action<List<Resource>, List<ResourceLoader.ThreadLoadStatus>> OnCompleteLoading, 
+    public static void AddResourcesLoadEvent(string key, List<string> paths, Action<List<Resource>, List<ResourceLoader.ThreadLoadStatus>> OnCompleteLoading,
         Action<double> OnLoadingInProgress = null, Action<Error> OnError = null)
     {
         // Clear last request
@@ -153,7 +158,7 @@ public partial class AsyncResourceLoadingManager : Node
                 return;
             }
         }
-        
+
 
         Instance.loadingTasks.Add(key, new()
         {

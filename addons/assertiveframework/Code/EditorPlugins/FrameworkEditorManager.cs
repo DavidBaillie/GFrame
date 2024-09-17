@@ -1,18 +1,25 @@
 #if TOOLS
 using Godot;
-using System;
 
 [Tool]
 public partial class FrameworkEditorManager : EditorPlugin
 {
+	public const string AsyncResourceLoadedName = "resource_loader";
+	public const string TagManagerName = "tag_manager";
+	public const string LevelManagerName = "level_manager";
+
 	public override void _EnterTree()
 	{
-		// Initialization of the plugin goes here.
+		AddAutoloadSingleton(AsyncResourceLoadedName, "res://addons/assertiveframework/Nodes/AsyncResourceLoadingManager.tscn");
+		AddAutoloadSingleton(TagManagerName, "res://addons/assertiveframework/Nodes/TagManager.tscn");
+		AddAutoloadSingleton(LevelManagerName, "res://addons/assertiveframework/Nodes/LevelManager.tscn");
 	}
 
 	public override void _ExitTree()
 	{
-		// Clean-up of the plugin goes here.
-	}
+        RemoveAutoloadSingleton(AsyncResourceLoadedName);
+        RemoveAutoloadSingleton(TagManagerName);
+        RemoveAutoloadSingleton(LevelManagerName);
+    }
 }
 #endif

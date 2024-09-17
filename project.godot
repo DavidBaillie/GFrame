@@ -11,8 +11,15 @@ config_version=5
 [application]
 
 config/name="AssertiveFramework"
+run/main_scene="res://Node/MAIN.tscn"
 config/features=PackedStringArray("4.2", "C#", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+resource_loader="*res://addons/assertiveframework/Nodes/AsyncResourceLoadingManager.tscn"
+tag_manager="*res://addons/assertiveframework/Nodes/TagManager.tscn"
+level_manager="*res://addons/assertiveframework/Nodes/LevelManager.tscn"
 
 [dotnet]
 
@@ -20,4 +27,4 @@ project/assembly_name="AssertiveFramework"
 
 [editor_plugins]
 
-enabled=PackedStringArray()
+enabled=PackedStringArray("res://addons/assertiveframework/plugin.cfg")

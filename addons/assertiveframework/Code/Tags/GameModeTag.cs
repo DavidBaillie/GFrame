@@ -1,9 +1,6 @@
 using Godot;
 
-/// <summary>
-/// Game mode base tag intended to be implemented by game modes in the project
-/// </summary>
-[GlobalClass, Tool]
+[GlobalClass]
 public partial class GameModeTag : Tag
 {
     /// <summary>
@@ -11,6 +8,12 @@ public partial class GameModeTag : Tag
     /// </summary>
     /// <param name="rootNode">Root node that other resources can be loaded under that will be disposed of later automatically</param>
     public virtual void Setup(Node rootNode) { }
+
+    /// <summary>
+    /// Called when a new collection is loaded but the same gamemode is being used
+    /// </summary>
+    /// <param name="rootNode">Root node to store assets under</param>
+    public virtual void ChangeCollection(Node oldRootNode, Node newRootNode) { }
 
     /// <summary>
     /// Called when the gamemode is being ended and should perform any needed cleanup
