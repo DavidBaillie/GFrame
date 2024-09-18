@@ -167,7 +167,6 @@ public partial class LevelManager : Node
     /// <param name="collection">Collection being loaded</param>
     private (List<Node> toMove, List<Node> unknown) GenerateActionsForExistingScenes(LevelCollectionTag collection)
     {
-        var pretty = GetTreeStringPretty();
         var rootNodes = GetTree().Root.GetChildren().ToList();
         var unknownNodes = rootNodes.Where(x => NodeUtilities.IsSceneNode(x) || NodeUtilities.IsUiNode(x)).ToList();
         var toMoveNodes = new List<Node>();
@@ -191,12 +190,12 @@ public partial class LevelManager : Node
     private List<PackedScene> GenerateActionsForNewCollectionScenes(LevelCollectionTag collection)
     {
         if (CurrentBaseNode is null || collection.ReloadAlreadyExistingNodes)
-            return collection.Scenes.ToList();
+            return collection.Scenes.Where(x => x != null).ToList();
 
         var currentNodes = CurrentBaseNode.GetChildren()
             .Where(x => NodeUtilities.IsSceneNode(x) || NodeUtilities.IsUiNode(x) && !string.IsNullOrEmpty(x.SceneFilePath));
 
-        return collection.Scenes.Where(inboundScene => !currentNodes.Any(curr => curr.SceneFilePath == inboundScene.ResourcePath)).ToList();
+        return collection.Scenes.Where(inboundScene => inboundScene != null && !currentNodes.Any(curr => curr.SceneFilePath == inboundScene.ResourcePath)).ToList();
     }
 
     private struct SceneActionCollection

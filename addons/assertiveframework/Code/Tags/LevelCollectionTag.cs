@@ -22,7 +22,7 @@ public partial class LevelCollectionTag : Tag
     /// <summary>
     /// Gamemode that will be loaded with the level
     /// </summary>
-    [Export]
+    [Export(PropertyHint.ResourceType)]
     public GameModeTag GameMode { get; set; } = null;
 
     /// <summary>

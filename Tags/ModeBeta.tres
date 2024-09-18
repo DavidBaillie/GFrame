@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="GameModeTag" load_steps=2 format=3 uid="uid://4ob7cxvw051g"]
+
+[ext_resource type="Script" path="res://addons/assertiveframework/Code/Tags/GameModeTag.cs" id="1_72ol7"]
+
+[resource]
+script = ExtResource("1_72ol7")
+Id = "61609532-c447-4319-bde0-e04d1c025d26"
+IsEnabled = true

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="LevelCollectionTag" load_steps=6 format=3 uid="uid://b2edxry3dwprf"]
+
+[ext_resource type="Script" path="res://addons/assertiveframework/Code/Tags/LevelCollectionTag.cs" id="1_1or41"]
+[ext_resource type="Resource" uid="uid://b2xnxulawb0i0" path="res://Tags/ModeAlpha.tres" id="1_yc858"]
+[ext_resource type="PackedScene" uid="uid://cjvuvqfsk6h5l" path="res://Node/ExampleScene1.tscn" id="2_rthx0"]
+[ext_resource type="PackedScene" uid="uid://jvlh37b8hq08" path="res://Node/ExampleScene2.tscn" id="3_6kkjm"]
+[ext_resource type="PackedScene" uid="uid://ny3h60ch4syx" path="res://Node/ExampleScene3.tscn" id="4_fdfl3"]
+
+[resource]
+script = ExtResource("1_1or41")
+EditorDisplayName = ""
+ReloadAlreadyExistingNodes = false
+GameMode = ExtResource("1_yc858")
+Scenes = [ExtResource("2_rthx0"), ExtResource("3_6kkjm"), ExtResource("4_fdfl3")]
+Id = "e475a1fa-a65e-4c97-8885-dc796276345f"
+IsEnabled = true
