@@ -1,4 +1,5 @@
 using Godot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,9 +10,6 @@ public partial class LevelManager : Node
 
     [Export]
     public PackedScene DefaultLoadingScreen { get; set; }
-
-    [Export]
-    public LevelCollectionTag OverrideStartLevel { get; set; } = null;
 
     public bool HasLoadedACollection => CurrentCollection != null;
     public LevelCollectionTag CurrentCollection { get; set; } = null;
@@ -35,26 +33,39 @@ public partial class LevelManager : Node
     /// <summary>
     /// Loads the provided game mode and scenes for the mode
     /// </summary>
-    /// <param name="collection">Level collection to load</param>
+    /// <param name="request">Level collection to load</param>
     /// <param name="freeUntrackedScenes">If unknown nodes should be removed</param>
-    public static void LoadSceneCollection(LevelCollectionTag collection, bool freeUntrackedScenes = true)
-        => Instance.DeferLoadingStart(collection, freeUntrackedScenes);
+    public static void LoadSceneCollection(SceneChangeRequest request, bool freeUntrackedScenes = true)
+        => Instance.DeferLoadingStart(request, freeUntrackedScenes);
 
-    private void DeferLoadingStart(LevelCollectionTag collection, bool freeUntrackedScenes = true)
+    private void DeferLoadingStart(SceneChangeRequest request, bool freeUntrackedScenes = true)
     {
-        if (collection == null)
+        if (request == null)
         {
-            GD.PrintErr($"Cannot load a null collection.");
+            GD.PrintErr($"Cannot load a null request.");
+            return;
+        }
+
+        LevelCollectionTag collection = null;
+
+        try
+        {
+            collection = GD.Load<LevelCollectionTag>(request.LevelCollectionPath)
+                ?? throw new ArgumentException($"No such resource at path: {request.LevelCollectionPath}");
+        }
+        catch (Exception e)
+        {
+            GD.PrintErr($"No such collection exists with name {request.LevelCollectionPath}.\nException: {e}");
             return;
         }
 
         if (CurrentCollection == collection)
         {
-            GD.PrintErr($"Cannot load the provided collection {collection.ResourceName} because it is already live!");
+            GD.PrintErr($"Cannot load the provided collection {request.ResourceName} because it is already live!");
             return;
         }
 
-        CallDeferred(MethodName.StartLoadingNewLevel, collection, freeUntrackedScenes);
+        StartLoadingNewLevel(collection, freeUntrackedScenes);
     }
 
     /// <summary>
@@ -66,12 +77,18 @@ public partial class LevelManager : Node
     {
         // Load loading screen
         var loadingScreen = collection.LoadingScreenOverride ?? DefaultLoadingScreen;
-        AsyncResourceLoadingManager.AddResourceLoadEvent(nameof(LevelManager), loadingScreen.ResourcePath,
-            (assets, failures) => LoadNewNodes(collection, assets[0], freeUntrackedScenes),
-            (percentLoaded) => { /* Loading percentage */ },
-            (error) => GD.PrintErr($"Failed to load the loading screen [{loadingScreen?.ResourceName}]"));
 
-        var loadingScreenNode = ResourceLoader.Load<PackedScene>(loadingScreen.ResourcePath).Instantiate<Node>();
+        if (loadingScreen == null)
+        {
+            LoadNewNodes(collection, new Node(), freeUntrackedScenes);
+        }
+        else
+        {
+            AsyncResourceLoadingManager.AddResourceLoadEvent($"{nameof(LevelManager)}-{nameof(LoadNewNodes)}", loadingScreen.ResourcePath,
+                (assets, failures) => LoadNewNodes(collection, (assets[0] as PackedScene).Instantiate(), freeUntrackedScenes),
+                (percentLoaded) => { /* Loading percentage */ },
+                (error) => GD.PrintErr($"Failed to load the loading screen [{loadingScreen?.ResourceName}]"));
+        }
     }
 
     /// <summary>
@@ -79,15 +96,17 @@ public partial class LevelManager : Node
     /// </summary>
     /// <param name="collection"></param>
     /// <param name="freeUntrackedScenes"></param>
-    private void LoadNewNodes(LevelCollectionTag collection, Resource loadingScreen, bool freeUntrackedScenes = true)
+    private void LoadNewNodes(LevelCollectionTag collection, Node loadingScreen, bool freeUntrackedScenes = true)
     {
-        loadingScreenNode = (loadingScreen as PackedScene).Instantiate();
-        GetTree().Root.AddChild(loadingScreenNode);
+        loadingScreenNode = loadingScreen;
+        GetTree().Root.CallDeferred(Node.MethodName.AddChild, loadingScreenNode);
+        
+        //GetTree().Root.AddChild(loadingScreenNode);
 
         //Create new node to hold everything
         var newNode = new Node();
         newNode.Name = string.IsNullOrWhiteSpace(collection.EditorDisplayName) ? collection.ResourceName : collection.EditorDisplayName;
-        GetTree().Root.AddChild(newNode);
+        GetTree().Root.CallDeferred(Node.MethodName.AddChild, newNode);
 
         // Same gamemode, different collection
         if (CurrentCollection?.GameMode is not null && CurrentCollection.GameMode == collection.GameMode)
@@ -122,25 +141,37 @@ public partial class LevelManager : Node
         //Load the new nodes
         CurrentBaseNode = newNode;
 
-        AsyncResourceLoadingManager.AddResourcesLoadEvent(nameof(LevelManager), nodeActions.ScenesToLoad.Select(x => x.ResourcePath).ToList(),
-            (assets, failures) => { InstanceNewNodes(collection, assets); },
+        AsyncResourceLoadingManager.AddResourcesLoadEvent($"{nameof(LevelManager)}-{nameof(InstanceNewNodes)}", nodeActions.ScenesToLoad.Select(x => x.ResourcePath).ToList(),
+            (assets, failures) => { InstanceNewNodes(collection, assets, failures); },
             (progress) => { /* Progress Bar */ },
             (error) => { GD.PrintErr($"Failed to load any new scenes during transition!"); });
     }
 
-    private void InstanceNewNodes(LevelCollectionTag collection, List<Resource> scenes)
+    private void InstanceNewNodes(LevelCollectionTag collection, List<Resource> scenes, List<AsyncResourceLoadingManager.LoadFailure> failedLoads)
     {
-        foreach (var resource in scenes)
-        {
-            if (resource is PackedScene scene)
-            {
-                CurrentBaseNode.AddChild(scene.Instantiate());
-            }
-        }
+        if (failedLoads.Count > 0)
+            GD.PrintErr($"Failed to load {string.Join(", ", failedLoads.Select(x => x.Path))}\nAble to load: {string.Join(", ", scenes.Select(x => x.ResourcePath))}");
 
-        CurrentCollection = collection;
-        collection.GameMode?.Setup(CurrentBaseNode);
-        loadingScreenNode.QueueFree();
+        try
+        {
+            foreach (var resource in scenes)
+            {
+                if (resource is PackedScene scene)
+                {
+                    var node = scene.Instantiate();
+                    CurrentBaseNode.AddChild(node);
+                }
+            }
+
+            CurrentCollection = collection;
+            collection.GameMode?.Setup(CurrentBaseNode);
+            loadingScreenNode?.QueueFree();
+            loadingScreenNode = null;
+        }
+        catch (Exception e)
+        {
+            GD.PrintErr($"Failed to instance new nodes: {e}");
+        }
     }
 
     /// <summary>
@@ -190,12 +221,16 @@ public partial class LevelManager : Node
     private List<PackedScene> GenerateActionsForNewCollectionScenes(LevelCollectionTag collection)
     {
         if (CurrentBaseNode is null || collection.ReloadAlreadyExistingNodes)
-            return collection.Scenes.Where(x => x != null).ToList();
+            return collection.Scenes
+                .Where(x => x != null)
+                .ToList();
 
         var currentNodes = CurrentBaseNode.GetChildren()
             .Where(x => NodeUtilities.IsSceneNode(x) || NodeUtilities.IsUiNode(x) && !string.IsNullOrEmpty(x.SceneFilePath));
 
-        return collection.Scenes.Where(inboundScene => inboundScene != null && !currentNodes.Any(curr => curr.SceneFilePath == inboundScene.ResourcePath)).ToList();
+        return collection.Scenes
+            .Where(inboundScene => inboundScene != null && !currentNodes.Any(curr => curr.SceneFilePath == inboundScene.ResourcePath))
+            .ToList();
     }
 
     private struct SceneActionCollection

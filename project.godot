@@ -25,6 +25,10 @@ level_manager="*res://addons/assertiveframework/Nodes/LevelManager.tscn"
 
 project/assembly_name="AssertiveFramework"
 
+[editor]
+
+import/use_multiple_threads=false
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/assertiveframework/plugin.cfg")

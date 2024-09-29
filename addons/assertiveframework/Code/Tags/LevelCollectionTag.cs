@@ -35,6 +35,6 @@ public partial class LevelCollectionTag : Tag
     /// <summary>
     /// Nodes/Scenes that will be part of loading this level
     /// </summary>
-    [Export]
-    public Array<PackedScene> Scenes { get; set; } = new Array<PackedScene>();
+    [Export(PropertyHint.GlobalFile)]
+    public Array<PackedScene> Scenes { get; set; } = new();
 }

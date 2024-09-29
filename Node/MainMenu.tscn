@@ -1,4 +1,19 @@
-[gd_scene format=3 uid="uid://cn0wf85iibpd7"]
+[gd_scene load_steps=6 format=3 uid="uid://cn0wf85iibpd7"]
+
+[ext_resource type="Script" path="res://Code/ChangeLevelButton.cs" id="1_joi50"]
+[ext_resource type="Script" path="res://addons/assertiveframework/Code/Tags/SceneChangeRequest.cs" id="2_1prcs"]
+
+[sub_resource type="Resource" id="Resource_j38kf"]
+script = ExtResource("2_1prcs")
+LevelCollectionPath = "res://Tags/SurvivalCollection1.tres"
+
+[sub_resource type="Resource" id="Resource_xis1a"]
+script = ExtResource("2_1prcs")
+LevelCollectionPath = "res://Tags/SurvivalCollection2.tres"
+
+[sub_resource type="Resource" id="Resource_5uy01"]
+script = ExtResource("2_1prcs")
+LevelCollectionPath = "res://Tags/LastStandCollection1.tres"
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -17,4 +32,38 @@ offset_left = 416.0
 offset_top = 75.0
 offset_right = -437.0
 offset_bottom = -525.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "Alpha"
+script = ExtResource("1_joi50")
+Level = SubResource("Resource_j38kf")
+
+[node name="Button2" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 416.0
+offset_top = 202.0
+offset_right = -437.0
+offset_bottom = -398.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Beta"
+script = ExtResource("1_joi50")
+Level = SubResource("Resource_xis1a")
+
+[node name="Button3" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 416.0
+offset_top = 326.0
+offset_right = -437.0
+offset_bottom = -274.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Charlie"
+script = ExtResource("1_joi50")
+Level = SubResource("Resource_5uy01")
