@@ -38,8 +38,11 @@ public partial class TagManager : Node
     /// <summary>
     /// Get every tag in the project
     /// </summary>
-    public static List<Tag> GetAllTags(string basePath)
+    public static List<Tag> GetAllTags(string basePath = null)
     {
+        if (string.IsNullOrWhiteSpace(basePath))
+            basePath = Instance?.TagBasePath ?? "res://Tags";
+
         var tags = new List<Tag>();
         foreach (var path in FileUtilities.GetAllFilesAtPath(basePath, true, (x) => x.EndsWith(".tres")))
         {
