@@ -36,13 +36,16 @@ public partial class LevelManager : Node
     /// <param name="request">Level collection to load</param>
     /// <param name="freeUntrackedScenes">If unknown nodes should be removed</param>
     public static void LoadSceneCollection(SceneChangeRequest request, bool freeUntrackedScenes = true)
-        => Instance.DeferLoadingStart(request, freeUntrackedScenes);
+        => Instance.DeferLoadingStart(request?.LevelCollectionPath, freeUntrackedScenes);
 
-    private void DeferLoadingStart(SceneChangeRequest request, bool freeUntrackedScenes = true)
+    public static void LoadSceneCollection(string resourcePath, bool freeUntrackedScenes = true)
+        => Instance.DeferLoadingStart(resourcePath, freeUntrackedScenes);
+
+    private void DeferLoadingStart(string requestedResourcePath, bool freeUntrackedScenes = true)
     {
-        if (request == null)
+        if (string.IsNullOrWhiteSpace(requestedResourcePath))
         {
-            GD.PrintErr($"Cannot load a null request.");
+            GD.PrintErr($"Cannot load a null resource by path.");
             return;
         }
 
@@ -50,18 +53,18 @@ public partial class LevelManager : Node
 
         try
         {
-            collection = GD.Load<LevelCollectionTag>(request.LevelCollectionPath)
-                ?? throw new ArgumentException($"No such resource at path: {request.LevelCollectionPath}");
+            collection = GD.Load<LevelCollectionTag>(requestedResourcePath)
+                ?? throw new ArgumentException($"No such resource at path: {requestedResourcePath}");
         }
         catch (Exception e)
         {
-            GD.PrintErr($"No such collection exists with name {request.LevelCollectionPath}.\nException: {e}");
+            GD.PrintErr($"No such collection exists with path {requestedResourcePath}.\nException: {e}");
             return;
         }
 
         if (CurrentCollection == collection)
         {
-            GD.PrintErr($"Cannot load the provided collection {request.ResourceName} because it is already live!");
+            GD.PrintErr($"Cannot load the provided collection {collection.EditorDisplayName} because it is already live!");
             return;
         }
 
