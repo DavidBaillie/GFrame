@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="LevelCollectionTag" load_steps=6 format=3 uid="uid://d2oky3xgq2rm8"]
+[gd_resource type="Resource" load_steps=6 format=3 uid="uid://d2oky3xgq2rm8"]
 
 [ext_resource type="Resource" uid="uid://dphsqre7ei3aw" path="res://Tags/LastStandGameMode.tres" id="1_aasss"]
-[ext_resource type="Script" path="res://addons/assertiveframework/Code/Tags/LevelCollectionTag.cs" id="1_bfs1o"]
+[ext_resource type="Script" uid="uid://cx2wch8vj7c4u" path="res://addons/GFrame/Code/Tags/LevelCollectionTag.cs" id="1_bfs1o"]
 [ext_resource type="PackedScene" uid="uid://cjvuvqfsk6h5l" path="res://Node/ExampleScene1.tscn" id="2_1mr67"]
 [ext_resource type="PackedScene" uid="uid://jvlh37b8hq08" path="res://Node/ExampleScene2.tscn" id="3_cniej"]
 [ext_resource type="PackedScene" uid="uid://cn0wf85iibpd7" path="res://Node/MainMenu.tscn" id="4_lfbba"]

@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="LevelCollectionTag" load_steps=7 format=3 uid="uid://c4kjdppsplw3f"]
+[gd_resource type="Resource" load_steps=7 format=3 uid="uid://c4kjdppsplw3f"]
 
 [ext_resource type="Resource" uid="uid://5vbx35y0863x" path="res://Tags/SurvivalGameMode.tres" id="1_3mgrq"]
 [ext_resource type="PackedScene" uid="uid://jvlh37b8hq08" path="res://Node/ExampleScene2.tscn" id="2_cy1lp"]
 [ext_resource type="PackedScene" uid="uid://ny3h60ch4syx" path="res://Node/ExampleScene3.tscn" id="3_ay800"]
 [ext_resource type="PackedScene" uid="uid://b0k8p4da6jka1" path="res://Node/ExampleScene4.tscn" id="4_qbxkl"]
 [ext_resource type="PackedScene" uid="uid://cn0wf85iibpd7" path="res://Node/MainMenu.tscn" id="5_elygh"]
-[ext_resource type="Script" path="res://addons/assertiveframework/Code/Tags/LevelCollectionTag.cs" id="6_bpx4h"]
+[ext_resource type="Script" uid="uid://cx2wch8vj7c4u" path="res://addons/GFrame/Code/Tags/LevelCollectionTag.cs" id="6_bpx4h"]
 
 [resource]
 script = ExtResource("6_bpx4h")

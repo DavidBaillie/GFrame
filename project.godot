@@ -10,20 +10,20 @@ config_version=5
 
 [application]
 
-config/name="AssertiveFramework"
+config/name="GFrame"
 run/main_scene="res://Node/GameStart.tscn"
-config/features=PackedStringArray("4.2", "C#", "Forward Plus")
+config/features=PackedStringArray("4.4", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
-resource_loader="*res://addons/assertiveframework/Nodes/AsyncResourceLoadingManager.tscn"
-tag_manager="*res://addons/assertiveframework/Nodes/TagManager.tscn"
-level_manager="*res://addons/assertiveframework/Nodes/LevelManager.tscn"
+resource_loader="*res://addons/GFrame/Nodes/AsyncResourceLoadingManager.tscn"
+tag_manager="*res://addons/GFrame/Nodes/TagManager.tscn"
+level_manager="*res://addons/GFrame/Nodes/LevelManager.tscn"
 
 [dotnet]
 
-project/assembly_name="AssertiveFramework"
+project/assembly_name="GFrame"
 
 [editor]
 
@@ -31,4 +31,4 @@ import/use_multiple_threads=false
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/assertiveframework/plugin.cfg")
+enabled=PackedStringArray("res://addons/GFrame/plugin.cfg")

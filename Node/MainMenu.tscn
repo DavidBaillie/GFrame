@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3 uid="uid://cn0wf85iibpd7"]
 
-[ext_resource type="Script" path="res://Code/ChangeLevelButton.cs" id="1_joi50"]
-[ext_resource type="Script" path="res://addons/assertiveframework/Code/Tags/SceneChangeRequest.cs" id="2_1prcs"]
+[ext_resource type="Script" uid="uid://jgjk2gklxhky" path="res://Code/ChangeLevelButton.cs" id="1_joi50"]
+[ext_resource type="Script" uid="uid://g4ep8dc6og8r" path="res://addons/GFrame/Code/Tags/SceneChangeRequest.cs" id="2_1prcs"]
 
 [sub_resource type="Resource" id="Resource_j38kf"]
 script = ExtResource("2_1prcs")

@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="GameModeTag" load_steps=2 format=3 uid="uid://dphsqre7ei3aw"]
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://dphsqre7ei3aw"]
 
-[ext_resource type="Script" path="res://addons/assertiveframework/Code/Tags/GameModeTag.cs" id="1_d3uma"]
+[ext_resource type="Script" uid="uid://cdcwfwsbwtcon" path="res://addons/GFrame/Code/Tags/GameModeTag.cs" id="1_d3uma"]
 
 [resource]
 script = ExtResource("1_d3uma")

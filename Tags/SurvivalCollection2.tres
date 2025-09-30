@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="LevelCollectionTag" load_steps=6 format=3 uid="uid://q8h7sdj7g87b"]
+[gd_resource type="Resource" load_steps=6 format=3 uid="uid://q8h7sdj7g87b"]
 
-[ext_resource type="Script" path="res://addons/assertiveframework/Code/Tags/LevelCollectionTag.cs" id="1_4tr3s"]
+[ext_resource type="Script" uid="uid://cx2wch8vj7c4u" path="res://addons/GFrame/Code/Tags/LevelCollectionTag.cs" id="1_4tr3s"]
 [ext_resource type="Resource" uid="uid://5vbx35y0863x" path="res://Tags/SurvivalGameMode.tres" id="1_5h2o0"]
 [ext_resource type="PackedScene" uid="uid://ny3h60ch4syx" path="res://Node/ExampleScene3.tscn" id="2_ids0n"]
 [ext_resource type="PackedScene" uid="uid://b0k8p4da6jka1" path="res://Node/ExampleScene4.tscn" id="3_h6yab"]
